@@ -21,6 +21,7 @@
 #define FB_SIZE(width, heigth) (width*LCDPAGES(heigth))
 
 #define panel_checksum             CHECKSUM("panel")
+#define power_en_pin_checksum      CHECKSUM("power_en_pin")
 #define spi_channel_checksum       CHECKSUM("spi_channel")
 #define spi_cs_pin_checksum        CHECKSUM("spi_cs_pin")
 #define spi_frequency_checksum     CHECKSUM("spi_frequency")
@@ -98,7 +99,11 @@ ST7565::ST7565(uint8_t variant) {
             break;
     }
 
-    //SPI com
+    // Power enable
+    this->power_en_pin.from_string(THEKERNEL->config->value( panel_checksum, power_en_pin_checksum)->by_default("nc")->as_string())->as_output();
+    if(this->power_en_pin.connected()) this->power_en_pin.set(this->power_en_pin.is_inverting() ? 0 : 1);
+
+    // SPI com
     // select which SPI channel to use
     int spi_channel = THEKERNEL->config->value(panel_checksum, spi_channel_checksum)->by_default(0)->as_number();
     PinName mosi, miso, sclk;
@@ -158,7 +163,7 @@ ST7565::ST7565(uint8_t variant) {
 
     this->buzz_pin.from_string(THEKERNEL->config->value( panel_checksum, buzz_pin_checksum)->by_default("nc")->as_string())->as_output();
     this->buzz_type_simple = THEKERNEL->config->value( panel_checksum, buzz_type_simple_checksum)->by_default("false")->as_bool();
-    this->buzz_pin.set(this->buzz_pin.is_inverting() ? 1 : 0);
+    if(this->buzz_pin.connected()) this->buzz_pin.set(this->buzz_pin.is_inverting() ? 1 : 0);
 
     if(is_viki2) {
         this->red_led.from_string(THEKERNEL->config->value( panel_checksum, red_led_checksum)->by_default("nc")->as_string())->as_output();
@@ -335,8 +340,30 @@ void ST7565::init()
             0xAF,  // drivers on
         };
         send_commands(init_seq, sizeof(init_seq));
-
-    }else{
+    } else if(is_ssd1322) {
+        const unsigned char init_seq[] = {
+            0xFD, 0x12,         // unlock IC
+            0xA4,               // display off
+            0xB3, 0xF2,         // clock     
+            0xCA, 0x3F,         // mux ratio     
+            0xA2, 0x00,         // display offset  
+            0xA1, 0x00,         // display start line
+            0xA0, 0x14, 0x11,   // set remap & dual COM line
+            0xB5, 0x00,         // disable GPIO
+            0xAB, 0x01,         // use internal vdd
+            0xB4, 0xA0, 0xFD,   // display enhancement A
+            0xC7, 0x0F,         // master contrast
+            0xB9,               // default greyscale table
+            0xB1, 0xF0,         // phase length
+            0xD1, 0x82, 0x20,   // display enhancement B (reset)
+            0xBB, 0x0D,         // pre-charge voltage
+            0xB6, 0x08,         // 2nd precharge period
+            0xBE, 0x00,         // set VcomH
+            0xA6,               // normal display (reset)
+            0xA9                // exit partial display
+        };
+        send_commands(init_seq, sizeof(init_seq));
+    } else {
         const unsigned char init_seq[] = {
             0x40,    //Display start line 0
             (unsigned char)((reversed^is_sh1106) ? 0xa0 : 0xa1), // ADC

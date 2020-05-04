@@ -66,6 +66,7 @@ private:
     //buffer
     unsigned char *framebuffer;
     mbed::SPI* spi;
+    Pin power_en_pin;
     Pin cs;
     Pin rst;
     Pin a0;

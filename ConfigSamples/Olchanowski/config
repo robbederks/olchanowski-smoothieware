@@ -242,12 +242,14 @@ leveling-strategy.three-point-leveling.save_plane     false       # set to true 
 panel.enable                                 true              # Set to true to enable the panel code
 
 panel.lcd                                    ssd1322_oled      # set type of panel
+panel.power_en_pin                           1.29!             # set power enable pin
 panel.spi_channel                            0                 # set spi channel to use P0_18,P0_15 MOSI,SCLK
 panel.spi_cs_pin                             0.16              # set spi chip select
+panel.rst_pin                                1.30              # reset pin
+panel.a0_pin                                 1.28              # pin a0 (data/command)
 panel.encoder_a_pin                          1.21!^            # encoder pin
 panel.encoder_b_pin                          1.22!^            # encoder pin
 panel.click_button_pin                       4.29!^            # click button
-panel.contrast                               8                 # override contrast setting (default is 9) miniViki (4 or lower)
 #panel.encoder_resolution                    4                 # override number of clicks to move 1 item (default is 4)
 panel.buzz_pin                               4.28!             # pin for buzzer on EXP2
 panel.buzz_type_simple                       true              # do we just pull the pin high?
