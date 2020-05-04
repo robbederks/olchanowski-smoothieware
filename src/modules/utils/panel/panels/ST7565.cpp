@@ -14,17 +14,11 @@
 #include "StreamOutputPool.h"
 #include "ConfigValue.h"
 
-
-
 //definitions for lcd
-#define LCDWIDTH 128
-#define LCDWIDTH_SH1106 132
-#define LCDHEIGHT 64
-#define LCDPAGES  (LCDHEIGHT+7)/8
-#define FB_SIZE LCDWIDTH*LCDPAGES
-#define FB_SIZE_SH1106 LCDWIDTH_SH1106*LCDPAGES
 #define FONT_SIZE_X 6
 #define FONT_SIZE_Y 8
+#define LCDPAGES(heigth) ((height+7)/8)
+#define FB_SIZE(width, heigth) (width*LCDPAGES(heigth))
 
 #define panel_checksum             CHECKSUM("panel")
 #define spi_channel_checksum       CHECKSUM("spi_channel")
@@ -38,6 +32,7 @@
 #define pause_button_pin_checksum  CHECKSUM("pause_button_pin")
 #define back_button_pin_checksum   CHECKSUM("back_button_pin")
 #define buzz_pin_checksum          CHECKSUM("buzz_pin")
+#define buzz_type_simple_checksum  CHECKSUM("buzz_type_simple")
 #define contrast_checksum          CHECKSUM("contrast")
 #define reverse_checksum           CHECKSUM("reverse")
 #define rst_pin_checksum           CHECKSUM("rst_pin")
@@ -48,12 +43,12 @@
 #define CLAMP(x, low, high) { if ( (x) < (low) ) x = (low); if ( (x) > (high) ) x = (high); } while (0);
 #define swap(a, b) { uint8_t t = a; a = b; b = t; }
 
-ST7565::ST7565(uint8_t variant)
-{
+ST7565::ST7565(uint8_t variant) {
     is_viki2 = false;
     is_mini_viki2 = false;
     is_ssd1306= false;
     is_sh1106= false;
+    is_ssd1322= false;
 
     // set the variant
     switch(variant) {
@@ -61,17 +56,23 @@ ST7565::ST7565(uint8_t variant)
             is_viki2 = true;
             this->reversed = true;
             this->contrast = 9;
+            this->width = 128;
+            this->height = 64;
             break;
         case 2:
             is_mini_viki2 = true;
             this->reversed = true;
             this->contrast = 18;
+            this->width = 128;
+            this->height = 64;
             break;
         case 3: // SSD1306 OLED
             // set default for sub variants
             is_ssd1306= true;
             this->reversed = false;
             this->contrast = 9;
+            this->width = 128;
+            this->height = 64;
             break;
         case 4: // SH1106 OLED
             // set default for sub variants
@@ -79,6 +80,16 @@ ST7565::ST7565(uint8_t variant)
             //is_ssd1306= true;
             this->reversed = false;
             this->contrast = 15;
+            this->width = 132;
+            this->height = 64;
+            break;
+        case 5: // SH1322 OLED
+            // set default for sub variants
+            is_ssd1322 = true;
+            this->reversed = false;
+            this->contrast = 15;
+            this->width = 256;
+            this->height = 64;
             break;
        default:
             // set default for sub variants
@@ -146,6 +157,8 @@ ST7565::ST7565(uint8_t variant)
     this->encoder_b_pin.from_string(THEKERNEL->config->value( panel_checksum, encoder_b_pin_checksum)->by_default("nc")->as_string())->as_input();
 
     this->buzz_pin.from_string(THEKERNEL->config->value( panel_checksum, buzz_pin_checksum)->by_default("nc")->as_string())->as_output();
+    this->buzz_type_simple = THEKERNEL->config->value( panel_checksum, buzz_type_simple_checksum)->by_default("false")->as_bool();
+    this->buzz_pin.set(this->buzz_pin.is_inverting() ? 1 : 0);
 
     if(is_viki2) {
         this->red_led.from_string(THEKERNEL->config->value( panel_checksum, red_led_checksum)->by_default("nc")->as_string())->as_output();
@@ -160,7 +173,7 @@ ST7565::ST7565(uint8_t variant)
     // reverse display
     this->reversed = THEKERNEL->config->value(panel_checksum, reverse_checksum)->by_default(this->reversed)->as_bool();
 
-    framebuffer = (uint8_t *)AHB0.alloc((is_sh1106)?FB_SIZE_SH1106:FB_SIZE); // grab some memory from USB_RAM
+    framebuffer = (uint8_t *)AHB0.alloc(FB_SIZE(this->width, this->height)); // grab some memory from USB_RAM
     if(framebuffer == NULL) {
         THEKERNEL->streams->printf("Not enough memory available for frame buffer");
     }
@@ -199,8 +212,7 @@ void ST7565::send_data(const unsigned char *buf, size_t size)
 //clearing screen
 void ST7565::clear()
 {
-    int size  = (is_sh1106)?FB_SIZE_SH1106:FB_SIZE;
-    memset(framebuffer, 0, size);
+    memset(framebuffer, 0, FB_SIZE(this->width, this->height));
     this->tx = 0;
     this->ty = 0;
     this->text_color = 1;
@@ -209,17 +221,17 @@ void ST7565::clear()
 
 void ST7565::send_pic(const unsigned char *data)
 {
-    for (int i = 0; i < LCDPAGES; i++) {
+    for (int i = 0; i < LCDPAGES(this->height); i++) {
         set_xy(0, i);
-        send_data(data + i * LCDWIDTH, (is_sh1106)?LCDWIDTH_SH1106:LCDWIDTH);
+        send_data(data + i * this->width, this->width);
     }
 }
 
 // set column and page number
 void ST7565::set_xy(int x, int y)
 {
-    CLAMP(x, 0, LCDWIDTH - 1);
-    CLAMP(y, 0, LCDPAGES - 1);
+    CLAMP(x, 0, this->width - 1);
+    CLAMP(y, 0, LCDPAGES(this->height) - 1);
 
     if(is_ssd1306) {
         unsigned char cmd[6];
@@ -377,20 +389,20 @@ int ST7565::drawChar(int x, int y, unsigned char c, int color, bool bg)
         retVal = -tx;
     } else {
         for (uint8_t i = 0; i < 5; i++ ) {
-            if (x < LCDWIDTH) {     // Guard against drawing off screen
+            if (x < this->width) {     // Guard against drawing off screen
                 // Character glyph may cross two screen pages
                 int page = y / 8;
                 // Draw the first byte
-                if (page < LCDPAGES) {
-                    int screenIndex = page * LCDWIDTH + x;
+                if (page < LCDPAGES(this->height)) {
+                    int screenIndex = page * this->width + x;
                     uint8_t fontByte = glcd_font[(c * 5) + i] << (y % 8);
                     if (bg) drawByte(screenIndex, 0xFF << (y % 8), !color);
                     drawByte(screenIndex, fontByte, color);
                 }
                 // Draw the second byte
                 page++;
-                if (page < LCDPAGES) {
-                    int screenIndex = page * LCDWIDTH + x;
+                if (page < LCDPAGES(this->height)) {
+                    int screenIndex = page * this->width + x;
                     uint8_t fontByte = glcd_font[(c * 5) + i] >> (8 - (y % 8));
                     if (bg) drawByte(screenIndex, 0xFF >> (8 - (y % 8)), !color);
                     drawByte(screenIndex, fontByte, color);
@@ -486,10 +498,10 @@ void ST7565::bltGlyph(int x, int y, int w, int h, const uint8_t *glyph, int span
 
 void ST7565::renderGlyph(int x, int y, const uint8_t *g, int w, int h)
 {
-    CLAMP(x, 0, LCDWIDTH - 1);
-    CLAMP(y, 0, LCDHEIGHT - 1);
-    CLAMP(w, 0, LCDWIDTH - x);
-    CLAMP(h, 0, LCDHEIGHT - y);
+    CLAMP(x, 0, this->width - 1);
+    CLAMP(y, 0, this->height - 1);
+    CLAMP(w, 0, this->width - x);
+    CLAMP(h, 0, this->height - y);
 
     for(int i = 0; i < w; i++) {
         for(int j = 0; j < h; j++) {
@@ -515,7 +527,7 @@ void ST7565::pixel(int x, int y, int color)
 {
     int page = y / 8;
     unsigned char mask = 1 << (y % 8);
-    drawByte(page * LCDWIDTH + x, mask, color);
+    drawByte(page * this->width + x, mask, color);
 }
 
 void ST7565::drawHLine(int x, int y, int w, int color)
@@ -523,13 +535,13 @@ void ST7565::drawHLine(int x, int y, int w, int color)
     int page = y / 8;
     uint8_t mask = 1 << (y % 8);
     for (int i = 0; i < w; i++) {
-        drawByte(page * LCDWIDTH + x + i, mask, color);
+        drawByte(page * this->width + x + i, mask, color);
     }
 }
 
 void ST7565::drawVLine(int x, int y, int h, int color){
     int page = y / 8;
-    if (page >= LCDPAGES) return;
+    if (page >= LCDPAGES(this->height)) return;
     // First byte. Start with all on and shift to turn of the
     // bits before the start of the line
     int startbit = y % 8;
@@ -539,21 +551,21 @@ void ST7565::drawVLine(int x, int y, int h, int color){
     if (h < 8) {
         mask &= 0xff >> (8 - (startbit + h));
     }
-    drawByte(page * LCDWIDTH + x, mask, color);
+    drawByte(page * this->width + x, mask, color);
     h -= 8 - (y % 8);
     // Draw any completely filled bytes along the line
     while (h > 8) {
         page++;
-        if (page >= LCDPAGES) return;
+        if (page >= LCDPAGES(this->height)) return;
         mask = 0xff;
-        drawByte(page * LCDWIDTH + x, mask, color);
+        drawByte(page * this->width + x, mask, color);
         h -= 8;
     }
     page++;
-    if (page >= LCDPAGES) return;
+    if (page >= LCDPAGES(this->height)) return;
     // Last byte. Start filled and shift by 8 - number of pixels remaining
     mask = 0xff >> (8 - h);
-    drawByte(page * LCDWIDTH + x, mask, color);
+    drawByte(page * this->width + x, mask, color);
 }
 
 void ST7565::drawBox(int x, int y, int w, int h, int color) {
@@ -563,19 +575,26 @@ void ST7565::drawBox(int x, int y, int w, int h, int color) {
 }
 
 // cycle the buzzer pin at a certain frequency (hz) for a certain duration (ms)
+// if buzz_type_simple is true, we don't modulate the pin
 void ST7565::buzz(long duration, uint16_t freq)
 {
     if(!this->buzz_pin.connected()) return;
 
-    duration *= 1000; //convert from ms to us
-    long period = 1000000 / freq; // period in us
     long elapsed_time = 0;
-    while (elapsed_time < duration) {
-        this->buzz_pin.set(1);
-        wait_us(period / 2);
-        this->buzz_pin.set(0);
-        wait_us(period / 2);
-        elapsed_time += (period);
+    if(this->buzz_type_simple) {
+        this->buzz_pin.set(this->buzz_pin.is_inverting() ? 0 : 1);
+        wait_ms(duration);
+        this->buzz_pin.set(this->buzz_pin.is_inverting() ? 1 : 0);
+    } else {
+        long period = 1000000 / freq; // period in us        
+        duration *= 1000; //convert from ms to us
+        while (elapsed_time < duration) {
+            this->buzz_pin.set(1);
+            wait_us(period / 2);
+            this->buzz_pin.set(0);
+            wait_us(period / 2);
+            elapsed_time += (period);
+        }
     }
 }
 

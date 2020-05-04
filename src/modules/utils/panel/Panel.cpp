@@ -49,14 +49,15 @@
 #define viki2_checksum             CHECKSUM("viki2")
 #define mini_viki2_checksum        CHECKSUM("mini_viki2")
 #define universal_adapter_checksum CHECKSUM("universal_adapter")
-#define sh1106_oled_checksum      CHECKSUM("sh1106_oled")
+#define sh1106_oled_checksum       CHECKSUM("sh1106_oled")
+#define ssd1322_oled_checksum      CHECKSUM("ssd1322_oled")
 
 #define menu_offset_checksum        CHECKSUM("menu_offset")
 #define encoder_resolution_checksum CHECKSUM("encoder_resolution")
 #define jog_x_feedrate_checksum     CHECKSUM("alpha_jog_feedrate")
 #define jog_y_feedrate_checksum     CHECKSUM("beta_jog_feedrate")
 #define jog_z_feedrate_checksum     CHECKSUM("gamma_jog_feedrate")
-#define	longpress_delay_checksum	CHECKSUM("longpress_delay")
+#define	longpress_delay_checksum	  CHECKSUM("longpress_delay")
 
 #define ext_sd_checksum            CHECKSUM("external_sd")
 #define sdcd_pin_checksum          CHECKSUM("sdcd_pin")
@@ -131,6 +132,8 @@ void Panel::on_module_loaded()
         this->lcd = new UniversalAdapter();
     } else if (lcd_cksm == sh1106_oled_checksum) {
         this->lcd = new ST7565(4); // variant 4
+    } else if (lcd_cksm == ssd1322_oled_checksum) {
+        this->lcd = new ST7565(5); // variant 5
     } else {
         // no known lcd type defined
         delete this;

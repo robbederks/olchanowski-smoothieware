@@ -73,6 +73,7 @@ private:
     Pin up_pin;
     Pin down_pin;
     Pin buzz_pin;
+    bool buzz_type_simple;
     Pin aux_pin;
     Pin encoder_a_pin;
     Pin encoder_b_pin;
@@ -83,12 +84,15 @@ private:
     uint8_t tx, ty;
     uint8_t text_color = 1;
     uint8_t contrast;
+    uint16_t width;
+    uint16_t height;
     struct {
         bool reversed:1;
         bool is_viki2:1;
         bool is_mini_viki2:1;
         bool is_ssd1306:1;
         bool is_sh1106:1;
+        bool is_ssd1322:1;
         bool use_pause:1;
         bool use_back:1;
         bool text_background:1;
