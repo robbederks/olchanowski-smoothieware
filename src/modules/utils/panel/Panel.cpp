@@ -29,6 +29,7 @@
 
 #include "panels/ReprapDiscountGLCD.h"
 #include "panels/ST7565.h"
+#include "panels/SSD1322.h"
 #include "panels/UniversalAdapter.h"
 
 #include "version.h"
@@ -133,7 +134,7 @@ void Panel::on_module_loaded()
     } else if (lcd_cksm == sh1106_oled_checksum) {
         this->lcd = new ST7565(4); // variant 4
     } else if (lcd_cksm == ssd1322_oled_checksum) {
-        this->lcd = new ST7565(5); // variant 5
+        this->lcd = new SSD1322();
     } else {
         // no known lcd type defined
         delete this;

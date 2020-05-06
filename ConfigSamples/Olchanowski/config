@@ -242,7 +242,7 @@ leveling-strategy.three-point-leveling.save_plane     false       # set to true 
 panel.enable                                 true              # Set to true to enable the panel code
 
 panel.lcd                                    ssd1322_oled      # set type of panel
-panel.power_en_pin                           1.29!             # set power enable pin
+panel.power_en_pin                           1.29              # set power enable pin
 panel.spi_channel                            0                 # set spi channel to use P0_18,P0_15 MOSI,SCLK
 panel.spi_cs_pin                             0.16              # set spi chip select
 panel.rst_pin                                1.30              # reset pin

@@ -1,21 +1,21 @@
 /*
- * ST7565.h
+ * SSD1322.h
  *
- *  Created on: 21-06-2013
- *      Author: Wulfnor
+ *  Created on: 05-05-2020
+ *      Author: Robbe Derks
  */
 
-#ifndef ST7565_H_
-#define ST7565_H_
+#ifndef SSD1322_H_
+#define SSD1322_H_
 
 #include "LcdBase.h"
 #include "mbed.h"
 #include "libs/Pin.h"
 
-class ST7565: public LcdBase {
+class SSD1322: public LcdBase {
 public:
-    ST7565(uint8_t v= 0);
-    virtual ~ST7565();
+    SSD1322();
+    virtual ~SSD1322();
     void home();
     void clear();
     void display();
@@ -28,12 +28,10 @@ public:
     //encoder which dosent exist :/
     uint8_t readButtons();
     int readEncoderDelta();
-    int getEncoderResolution() { return is_viki2 ? 4 : 2; }
-    uint16_t get_screen_lines() { return 8; }
+    int getEncoderResolution() { return 2; }
+    uint16_t get_screen_lines() { return 7; }
     bool hasGraphics() { return true; }
 
-    //added ST7565 commands
-    void send_commands(const unsigned char* buf, size_t size);
     void send_command(const unsigned char cmd);
     void send_command_with_args(const unsigned char cmd, const unsigned char* args, size_t arg_size);
     void send_data(const unsigned char* buf, size_t size);
@@ -61,11 +59,8 @@ public:
     void setContrast(uint8_t c);
 
     void buzz(long duration, uint16_t freq);
-    void setLed(int led, bool onoff);
 
 private:
-
-    //buffer
     unsigned char *framebuffer;
     mbed::SPI* spi;
     Pin power_en_pin;
@@ -73,33 +68,17 @@ private:
     Pin rst;
     Pin a0;
     Pin click_pin;
-    Pin up_pin;
-    Pin down_pin;
     Pin buzz_pin;
     bool buzz_type_simple;
-    Pin aux_pin;
     Pin encoder_a_pin;
     Pin encoder_b_pin;
-    Pin red_led;
-    Pin blue_led;
-
-    // text cursor position
     uint8_t tx, ty;
-    uint8_t text_color = 1;
+    uint8_t text_color = 0xF;
+    bool text_background = true;
     uint8_t contrast;
     uint16_t width;
     uint16_t height;
-    struct {
-        bool reversed:1;
-        bool is_viki2:1;
-        bool is_mini_viki2:1;
-        bool is_ssd1306:1;
-        bool is_sh1106:1;
-        bool is_ssd1322:1;
-        bool use_pause:1;
-        bool use_back:1;
-        bool text_background:1;
-    };
+    bool reversed = false;
 };
 
-#endif /* ST7565_H_ */
+#endif /* SSD1322_H_ */

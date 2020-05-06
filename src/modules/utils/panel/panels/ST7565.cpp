@@ -6,7 +6,7 @@
  */
 
 #include "ST7565.h"
-#include "ST7565/glcdfont.h"
+#include "fonts/glcdfont.h"
 #include "Kernel.h"
 #include "platform_memory.h"
 #include "Config.h"
@@ -88,7 +88,7 @@ ST7565::ST7565(uint8_t variant) {
             // set default for sub variants
             is_ssd1322 = true;
             this->reversed = false;
-            this->contrast = 15;
+            this->contrast = 255;
             this->width = 256;
             this->height = 64;
             break;
@@ -100,8 +100,15 @@ ST7565::ST7565(uint8_t variant) {
     }
 
     // Power enable
-    this->power_en_pin.from_string(THEKERNEL->config->value( panel_checksum, power_en_pin_checksum)->by_default("nc")->as_string())->as_output();
+    this->power_en_pin.from_string(THEKERNEL->config->value(panel_checksum, power_en_pin_checksum)->by_default("nc")->as_string())->as_output();
     if(this->power_en_pin.connected()) this->power_en_pin.set(this->power_en_pin.is_inverting() ? 0 : 1);
+    if(this->power_en_pin.connected()) {
+        if(this->power_en_pin.is_inverting()){
+            THEKERNEL->streams->printf("Setting power pin to 0\n");
+        } else {
+            THEKERNEL->streams->printf("Setting power pin to 1\n");
+        }
+    } 
 
     // SPI com
     // select which SPI channel to use
@@ -124,13 +131,13 @@ ST7565::ST7565(uint8_t variant) {
 
     //lcd reset
     this->rst.from_string(THEKERNEL->config->value( panel_checksum, rst_pin_checksum)->by_default("nc")->as_string())->as_output();
-    if(this->rst.connected()) rst.set(1);
+    if(this->rst.connected()) rst.set(this->rst.is_inverting() ? 0 : 1);
 
     //a0
     this->a0.from_string(THEKERNEL->config->value( panel_checksum, a0_pin_checksum)->by_default("nc")->as_string())->as_output();
-    if(a0.connected()) a0.set(1);
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 0 : 1);
 
-    if(!is_viki2 && !is_mini_viki2 && !is_ssd1306) {
+    if(!is_viki2 && !is_mini_viki2 && !is_ssd1306 && !is_ssd1322) {
         this->up_pin.from_string(THEKERNEL->config->value( panel_checksum, up_button_pin_checksum )->by_default("nc")->as_string())->as_input();
         this->down_pin.from_string(THEKERNEL->config->value( panel_checksum, down_button_pin_checksum )->by_default("nc")->as_string())->as_input();
     } else {
@@ -195,10 +202,17 @@ ST7565::~ST7565()
 void ST7565::send_commands(const unsigned char *buf, size_t size)
 {
     cs.set(0);
-    if(a0.connected()) a0.set(0);
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 1 : 0);
     while(size-- > 0) {
         spi->write(*buf++);
     }
+    cs.set(1);
+}
+
+void ST7565::send_command(const unsigned char cmd){
+    cs.set(0);
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 1 : 0);
+    spi->write(cmd);
     cs.set(1);
 }
 
@@ -206,12 +220,28 @@ void ST7565::send_commands(const unsigned char *buf, size_t size)
 void ST7565::send_data(const unsigned char *buf, size_t size)
 {
     cs.set(0);
-    if(a0.connected()) a0.set(1);
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 0 : 1);
     while(size-- > 0) {
         spi->write(*buf++);
     }
     cs.set(1);
-    if(a0.connected()) a0.set(0);
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 1 : 0);
+}
+
+void ST7565::send_command_with_args(const unsigned char cmd, const unsigned char* args, size_t arg_size){
+    cs.set(0);
+
+    // command mode
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 1 : 0);
+    spi->write(cmd);
+
+    // data mode
+    if(a0.connected()) a0.set(this->a0.is_inverting() ? 0 : 1);
+    while(arg_size-- > 0) {
+        spi->write(*args++);
+    }
+
+    cs.set(1);
 }
 
 //clearing screen
@@ -247,8 +277,22 @@ void ST7565::set_xy(int x, int y)
         cmd[4] = y;      // start = row
         cmd[5] = 0x07;    // end = row max
         send_commands(cmd, 6);
+    } else if(is_ssd1322) {
+        unsigned char args[2];
 
-    }else{
+        // column
+        args[0] = x + 28;                  // start = col + col_offset
+        args[1] = this->width + 28;        // end = col max + col_offset
+        send_command_with_args(0x15, args, 2);
+
+        // page
+        args[0] = y;                       // start = row
+        args[1] = LCDPAGES(this->height);  // end = row max
+        send_command_with_args(0x75, args, 2);
+
+        // enable MCU to write data into RAM
+        send_command(0x5C);
+    } else {
         unsigned char cmd[3];
         cmd[0] = 0xb0 | (y & 0x07);
         cmd[1] = 0x10 | (x >> 4);
@@ -293,9 +337,9 @@ void ST7565::display()
 void ST7565::init()
 {
     if(this->rst.connected()) {
-        rst.set(0);
-        wait_us(20);
-        rst.set(1);
+        rst.set(this->rst.is_inverting() ? 1 : 0);
+        wait_ms(20);
+        rst.set(this->rst.is_inverting() ? 0 : 1);
     }
 
     if(is_ssd1306) {
@@ -341,28 +385,86 @@ void ST7565::init()
         };
         send_commands(init_seq, sizeof(init_seq));
     } else if(is_ssd1322) {
-        const unsigned char init_seq[] = {
-            0xFD, 0x12,         // unlock IC
-            0xA4,               // display off
-            0xB3, 0xF2,         // clock     
-            0xCA, 0x3F,         // mux ratio     
-            0xA2, 0x00,         // display offset  
-            0xA1, 0x00,         // display start line
-            0xA0, 0x14, 0x11,   // set remap & dual COM line
-            0xB5, 0x00,         // disable GPIO
-            0xAB, 0x01,         // use internal vdd
-            0xB4, 0xA0, 0xFD,   // display enhancement A
-            0xC7, 0x0F,         // master contrast
-            0xB9,               // default greyscale table
-            0xB1, 0xF0,         // phase length
-            0xD1, 0x82, 0x20,   // display enhancement B (reset)
-            0xBB, 0x0D,         // pre-charge voltage
-            0xB6, 0x08,         // 2nd precharge period
-            0xBE, 0x00,         // set VcomH
-            0xA6,               // normal display (reset)
-            0xA9                // exit partial display
-        };
-        send_commands(init_seq, sizeof(init_seq));
+        unsigned char args[2];
+
+        // unlock IC
+        args[0] = 0x12;
+        send_command_with_args(0xFD, args, 1);
+
+        // display off
+        send_command(0xAE);
+
+        // clock
+        args[0] = 0x91;
+        send_command_with_args(0xB3, args, 1);
+
+        // mux ratio
+        args[0] = 0x3F;
+        send_command_with_args(0xCA, args, 1);
+
+        // display offset
+        args[0] = 0x00;
+        send_command_with_args(0xA2, args, 1);
+
+        // display start line
+        args[0] = 0x00;
+        send_command_with_args(0xA1, args, 1);
+
+        // set remap & dual COM line
+        args[0] = 0x14;
+        args[1] = 0x11;
+        send_command_with_args(0xA0, args, 2);
+
+        // disable GPIO
+        args[0] = 0x00;
+        send_command_with_args(0xB5, args, 1);
+
+        // use internal vdd
+        args[0] = 0x01;
+        send_command_with_args(0xAB, args, 1);
+
+        // display enhancement A
+        args[0] = 0xA0;
+        args[1] = 0xFD;
+        send_command_with_args(0xB4, args, 2);
+
+        // normal contrast
+        args[0] = 0x9F;
+        send_command_with_args(0xC1, args, 1);
+
+        // master contrast
+        args[0] = 0x0F;
+        send_command_with_args(0xC7, args, 1);
+
+        // default greyscale table
+        send_command(0xB9);
+
+        // phase length
+        args[0] = 0xE2;
+        send_command_with_args(0xB1, args, 1);
+
+        // display enhancement B (reset)
+        args[0] = 0x82;
+        args[1] = 0x20;
+        send_command_with_args(0xD1, args, 2);
+
+        // pre-charge voltage
+        args[0] = 0x1F;
+        send_command_with_args(0xBB, args, 1);
+
+        // 2nd precharge period
+        args[0] = 0x08;
+        send_command_with_args(0xB6, args, 1);
+
+        // set VcomH
+        args[0] = 0x00;
+        send_command_with_args(0xBE, args, 1);
+
+        // normal display (reset)
+        send_command(0xA6);
+
+        // exit sleep
+        send_command(0xAF);
     } else {
         const unsigned char init_seq[] = {
             0x40,    //Display start line 0
@@ -388,13 +490,19 @@ void ST7565::init()
 
 void ST7565::setContrast(uint8_t c)
 {
-    const unsigned char contrast_seq[] = {
-        0x27,    //Contrast set
-        0x81,
-        c    //contrast value
-    };
-    this->contrast = c;
-    send_commands(contrast_seq, sizeof(contrast_seq));
+    if(is_ssd1322){
+        unsigned char args[1] = {c};
+        this->contrast = c;
+        send_command_with_args(0xC1, args, 1);
+    } else {
+        const unsigned char contrast_seq[] = {
+            0x27,    //Contrast set
+            0x81,
+            c    //contrast value
+        };
+        this->contrast = c;
+        send_commands(contrast_seq, sizeof(contrast_seq));
+    }
 }
 
 /**
