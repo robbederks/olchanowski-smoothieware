@@ -9,9 +9,9 @@ mm_max_arc_error                             0.01             # The maximum erro
 
 # Arm solution configuration : Cartesian robot. Translates mm positions into stepper positions
 # See http://smoothieware.org/stepper-motors
-alpha_steps_per_mm                           80               # Steps per mm for alpha ( X ) stepper
-beta_steps_per_mm                            80               # Steps per mm for beta ( Y ) stepper
-gamma_steps_per_mm                           1600             # Steps per mm for gamma ( Z ) stepper
+alpha_steps_per_mm                           1280             # Steps per mm for alpha ( X ) stepper
+beta_steps_per_mm                            1280             # Steps per mm for beta ( Y ) stepper
+gamma_steps_per_mm                           12800            # Steps per mm for gamma ( Z ) stepper
 
 # Planner module configuration : Look-ahead and acceleration configuration
 # See http://smoothieware.org/motion-control
@@ -31,25 +31,111 @@ z_axis_max_speed                             300              # Maximum speed in
 alpha_step_pin                               2.2              # Pin for alpha stepper step signal
 alpha_dir_pin                                1.24             # Pin for alpha stepper direction, add '!' to reverse direction
 alpha_en_pin                                 1.23             # Pin for alpha enable pin
-alpha_current                                1.5              # X stepper motor current
 alpha_max_rate                               30000.0          # Maximum rate in mm/min
 
 beta_step_pin                                2.1              # Pin for beta stepper step signal
 beta_dir_pin                                 0.5              # Pin for beta stepper direction, add '!' to reverse direction
 beta_en_pin                                  0.4              # Pin for beta enable
-beta_current                                 1.5              # Y stepper motor current
 beta_max_rate                                30000.0          # Maxmimum rate in mm/min
 
 gamma_step_pin                               2.0              # Pin for gamma stepper step signal
 gamma_dir_pin                                0.20             # Pin for gamma stepper direction, add '!' to reverse direction
 gamma_en_pin                                 0.19             # Pin for gamma enable
-gamma_current                                1.5              # Z stepper motor current
 gamma_max_rate                               300.0            # Maximum rate in mm/min
+
+
+# Stepper driver config
+motor_driver_control.enable                               true        # Enable module
+
+motor_driver_control.alpha.enable                         true        # Enable motor driver module
+motor_driver_control.alpha.axis                           X           # Axis designator on which the motor driver is set
+motor_driver_control.alpha.slave_addr                     0           # Driver slave address (set by MS1 and MS2)
+motor_driver_control.alpha.chip                           TMC2209     # Motor driver chip type
+motor_driver_control.alpha.sw_uart_tx_pin                 0.10        # Transmitting line from the board to the alpha. Required.
+motor_driver_control.alpha.sw_uart_rx_pin                 0.11        # Receiving line to the board; NC if not connected (default).
+motor_driver_control.alpha.sw_uart_baudrate               19200       # Software UART baudrate. Value higher than 50k is not recommended
+motor_driver_control.alpha.current                        1500        # Motor currents in mA
+motor_driver_control.alpha.sense_resistor                 100         # Sensing resistor value as a reference in milliohms
+motor_driver_control.alpha.microsteps                     256         # The actual microstep resolution (MRES) that will be extrapolated to 256 microsteps.
+motor_driver_control.alpha.chopper_mode                   1           # 0 = spreadCycle ; 1 = stealthChop 
+motor_driver_control.alpha.stealthchop_tpwmthrs           0           # Velocity to switch from StealthChop to SpreadCycle. Default 0 (disabled).
+motor_driver_control.alpha.stealthchop_pwm_lim            12          # PWM_LIM
+motor_driver_control.alpha.stealthchop_pwm_reg            1           # PWM_REG
+motor_driver_control.alpha.stealthchop_freewheel          0           # freewheel
+motor_driver_control.alpha.stealthchop_pwm_autograd       1           # PWM_AUTOGRAD
+motor_driver_control.alpha.stealthchop_pwm_autoscale      1           # PWM_AUTOSCALE
+motor_driver_control.alpha.stealthchop_pwm_freq           1           # PWM_FREQ
+motor_driver_control.alpha.stealthchop_pwm_grad           0           # PWM_GRAD
+motor_driver_control.alpha.stealthchop_pwm_ofs            36          # PWM_OFS
+
+motor_driver_control.beta.enable                          true        # Enable motor driver module
+motor_driver_control.beta.axis                            Y           # Axis designator on which the motor driver is set 
+motor_driver_control.beta.slave_addr                      1           # Driver slave address (set by MS1 and MS2)
+motor_driver_control.beta.chip                            TMC2209     # Motor driver chip type
+motor_driver_control.beta.sw_uart_tx_pin                  0.10        # Transmitting line from the board to the alpha. Required.
+motor_driver_control.beta.sw_uart_rx_pin                  0.11        # Receiving line to the board; NC if not connected (default).
+motor_driver_control.beta.sw_uart_baudrate                19200       # Software UART baudrate. Value higher than 50k is not recommended
+motor_driver_control.beta.current                         1500        # Motor currents in mA
+motor_driver_control.beta.sense_resistor                  100         # Sensing resistor value as a reference in milliohms
+motor_driver_control.beta.microsteps                      256         # The actual microstep resolution (MRES) that will be extrapolated to 256 microsteps.
+motor_driver_control.beta.chopper_mode                    1           # 0 = spreadCycle ; 1 = stealthChop 
+motor_driver_control.beta.stealthchop_tpwmthrs            0           # Velocity to switch from StealthChop to SpreadCycle. Default 0 (disabled).
+motor_driver_control.beta.stealthchop_pwm_lim             12          # PWM_LIM
+motor_driver_control.beta.stealthchop_pwm_reg             1           # PWM_REG
+motor_driver_control.beta.stealthchop_freewheel           0           # freewheel
+motor_driver_control.beta.stealthchop_pwm_autograd        1           # PWM_AUTOGRAD
+motor_driver_control.beta.stealthchop_pwm_autoscale       1           # PWM_AUTOSCALE
+motor_driver_control.beta.stealthchop_pwm_freq            1           # PWM_FREQ
+motor_driver_control.beta.stealthchop_pwm_grad            0           # PWM_GRAD
+motor_driver_control.beta.stealthchop_pwm_ofs             36          # PWM_OFS
+
+motor_driver_control.gamma.enable                         true        # Enable motor driver module
+motor_driver_control.gamma.axis                           Z           # Axis designator on which the motor driver is set 
+motor_driver_control.gamma.slave_addr                     2           # Driver slave address (set by MS1 and MS2)
+motor_driver_control.gamma.chip                           TMC2209     # Motor driver chip type
+motor_driver_control.gamma.sw_uart_tx_pin                 0.10        # Transmitting line from the board to the alpha. Required.
+motor_driver_control.gamma.sw_uart_rx_pin                 0.11        # Receiving line to the board; NC if not connected (default).
+motor_driver_control.gamma.sw_uart_baudrate               19200       # Software UART baudrate. Value higher than 50k is not recommended
+motor_driver_control.gamma.current                        1000        # Motor currents in mA
+motor_driver_control.gamma.sense_resistor                 100         # Sensing resistor value as a reference in milliohms
+motor_driver_control.gamma.microsteps                     256         # The actual microstep resolution (MRES) that will be extrapolated to 256 microsteps.
+motor_driver_control.gamma.chopper_mode                   1           # 0 = spreadCycle ; 1 = stealthChop 
+motor_driver_control.gamma.stealthchop_tpwmthrs           0           # Velocity to switch from StealthChop to SpreadCycle. Default 0 (disabled).
+motor_driver_control.gamma.stealthchop_pwm_lim            12          # PWM_LIM
+motor_driver_control.gamma.stealthchop_pwm_reg            1           # PWM_REG
+motor_driver_control.gamma.stealthchop_freewheel          0           # freewheel
+motor_driver_control.gamma.stealthchop_pwm_autograd       1           # PWM_AUTOGRAD
+motor_driver_control.gamma.stealthchop_pwm_autoscale      1           # PWM_AUTOSCALE
+motor_driver_control.gamma.stealthchop_pwm_freq           1           # PWM_FREQ
+motor_driver_control.gamma.stealthchop_pwm_grad           0           # PWM_GRAD
+motor_driver_control.gamma.stealthchop_pwm_ofs            36          # PWM_OFS
+
+motor_driver_control.extruder.enable                      true        # Enable motor driver module
+motor_driver_control.extruder.axis                        A           # Axis designator on which the motor driver is set 
+motor_driver_control.extruder.slave_addr                  3           # Driver slave address (set by MS1 and MS2)
+motor_driver_control.extruder.chip                        TMC2209     # Motor driver chip type
+motor_driver_control.extruder.sw_uart_tx_pin              0.10        # Transmitting line from the board to the alpha. Required.
+motor_driver_control.extruder.sw_uart_rx_pin              0.11        # Receiving line to the board; NC if not connected (default).
+motor_driver_control.extruder.sw_uart_baudrate            19200       # Software UART baudrate. Value higher than 50k is not recommended
+motor_driver_control.extruder.current                     1000        # Motor currents in mA
+motor_driver_control.extruder.sense_resistor              100         # Sensing resistor value as a reference in milliohms
+motor_driver_control.extruder.microsteps                  256         # The actual microstep resolution (MRES) that will be extrapolated to 256 microsteps.
+motor_driver_control.extruder.chopper_mode                1           # 0 = spreadCycle ; 1 = stealthChop 
+motor_driver_control.extruder.stealthchop_tpwmthrs        0           # Velocity to switch from StealthChop to SpreadCycle. Default 0 (disabled).
+motor_driver_control.extruder.stealthchop_pwm_lim         12          # PWM_LIM
+motor_driver_control.extruder.stealthchop_pwm_reg         1           # PWM_REG
+motor_driver_control.extruder.stealthchop_freewheel       0           # freewheel
+motor_driver_control.extruder.stealthchop_pwm_autograd    1           # PWM_AUTOGRAD
+motor_driver_control.extruder.stealthchop_pwm_autoscale   1           # PWM_AUTOSCALE
+motor_driver_control.extruder.stealthchop_pwm_freq        1           # PWM_FREQ
+motor_driver_control.extruder.stealthchop_pwm_grad        0           # PWM_GRAD
+motor_driver_control.extruder.stealthchop_pwm_ofs         36          # PWM_OFS
+
 
 ## Extruder module configuration
 # See http://smoothieware.org/extruder
 extruder.hotend.enable                          true          # Whether to activate the extruder module at all. All configuration is ignored if false
-extruder.hotend.steps_per_mm                    140           # Steps per mm for extruder stepper
+extruder.hotend.steps_per_mm                    1904          # Steps per mm for extruder stepper
 extruder.hotend.default_feed_rate               600           # Default rate ( mm/minute ) for moves where only the extruder moves
 extruder.hotend.acceleration                    500           # Acceleration for the stepper motor mm/sec²
 extruder.hotend.max_speed                       50            # Maximum speed in mm/s
@@ -144,17 +230,6 @@ switch.fan.output_pin                        2.4              # Pin this module 
 switch.fan.output_type                       pwm              # PWM output settable with S parameter in the input_on_comand
 #switch.fan.max_pwm                          255              # Set max pwm for the pin default is 255
 
-
-## Temperatureswitch
-# See http://smoothieware.org/temperatureswitch
-# Automatically toggle a switch at a specified temperature. Different ones of these may be defined to monitor different temperatures and switch different swithxes
-# Useful to turn on a fan or water pump to cool the hotend
-#temperatureswitch.hotend.enable              true            #
-#temperatureswitch.hotend.designator          T               # first character of the temperature control designator to use as the temperature sensor to monitor
-#temperatureswitch.hotend.switch              misc            # select which switch to use, matches the name of the defined switch
-#temperatureswitch.hotend.threshold_temp      60.0            # temperature to turn on (if rising) or off the switch
-#temperatureswitch.hotend.heatup_poll         15              # poll heatup at 15 sec intervals
-#temperatureswitch.hotend.cooldown_poll       60              # poll cooldown at 60 sec intervals
 
 ## Endstops
 # See http://smoothieware.org/endstops
