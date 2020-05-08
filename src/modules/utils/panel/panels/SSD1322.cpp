@@ -341,16 +341,24 @@ int SSD1322::drawChar(int x, int y, unsigned char c, int color, bool bg)
     } else if (c == '\r') {
         retVal = -(this->tx);
     } else {
-        // Naive implementation!
         int char_start = ((c - 32) * FONT_SIZE_X);
+        int index = (y * this->width / 2) + (x / 2);
+        bool first_pixel = ((x % 2) == 0);
+        uint8_t mask = first_pixel ? 0xF0 : 0x0F;
+
         for(uint8_t i=0; i<FONT_SIZE_X; i++){
             for(uint8_t j=0; j<FONT_SIZE_Y; j++){
                 if(ssd1322_font[char_start + i] & (1 << j)){
-                    pixel(x + i, y + j, color);
+                    framebuffer[index + (j * this->width / 2)] &= ~(mask);
+                    framebuffer[index + (j * this->width / 2)] |= (mask & (first_pixel ? (color << 4) : color));
                 } else if(bg){
-                    pixel(x + i, y + j, 0x00);
+                    framebuffer[index + (j * this->width / 2)] &= ~(mask);
                 }
             }
+            first_pixel = !first_pixel;
+            mask = first_pixel ? 0xF0 : 0x0F;
+            if((x+i)%2)
+                index++;
         }
 
         retVal = FONT_SIZE_X;
@@ -455,14 +463,36 @@ void SSD1322::pixel(int x, int y, int color) {
 
 void SSD1322::drawHLine(int x, int y, int w, int color)
 {
-    for (int i = 0; i < w; i++) {
-        pixel(x + i, y, color);
+    CLAMP(w, 0, this->width - x);
+    color &= 0x0F;
+
+    int index = (y * this->width / 2) + (x / 2);
+    if((x % 2) == 1){
+        framebuffer[index] &= 0x0F;
+        framebuffer[index] |= color;
+        index++;
+    }
+
+    for (int i = 0; i < (w/2); i++) {
+        framebuffer[index + i] = (color << 4) & color;
+    }
+
+    if(((x+w) % 2) == 1){
+        framebuffer[index + (x+w)/2] &= 0xF0;
+        framebuffer[index + (x+w)/2] |= (color << 4);
     }
 }
 
 void SSD1322::drawVLine(int x, int y, int h, int color){
+    CLAMP(h, 0, this->height - y);
+
+    int index = (y * this->width / 2) + (x / 2);
+    bool first_pixel = ((x % 2) == 0);
+    uint8_t mask = first_pixel ? 0xF0 : 0x0F;
     for (int i = 0; i < h; i++) {
-        pixel(x, y + i, color);
+        framebuffer[index] &= ~(mask);
+        framebuffer[index] |= (mask & (first_pixel ? (color << 4) : color));
+        index += (this->width / 2);
     }
 }
 

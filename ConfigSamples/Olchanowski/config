@@ -29,7 +29,7 @@ z_axis_max_speed                             300              # Maximum speed in
 # Pins are defined as  ports, and pin numbers, appending "!" to the number will invert a pin
 # See http://smoothieware.org/pin-configuration and http://smoothieware.org/pinout
 alpha_step_pin                               2.2              # Pin for alpha stepper step signal
-alpha_dir_pin                                1.24             # Pin for alpha stepper direction, add '!' to reverse direction
+alpha_dir_pin                                1.24!            # Pin for alpha stepper direction, add '!' to reverse direction
 alpha_en_pin                                 1.23             # Pin for alpha enable pin
 alpha_max_rate                               30000.0          # Maximum rate in mm/min
 
@@ -39,7 +39,7 @@ beta_en_pin                                  0.4              # Pin for beta ena
 beta_max_rate                                30000.0          # Maxmimum rate in mm/min
 
 gamma_step_pin                               2.0              # Pin for gamma stepper step signal
-gamma_dir_pin                                0.20             # Pin for gamma stepper direction, add '!' to reverse direction
+gamma_dir_pin                                0.20!            # Pin for gamma stepper direction, add '!' to reverse direction
 gamma_en_pin                                 0.19             # Pin for gamma enable
 gamma_max_rate                               300.0            # Maximum rate in mm/min
 
@@ -235,29 +235,29 @@ switch.fan.output_type                       pwm              # PWM output setta
 # See http://smoothieware.org/endstops
 endstops_enable                              true             # The endstop module is enabled by default and can be disabled here
 #corexy_homing                               false            # Set to true if homing on a hbot or corexy
-alpha_min_endstop                            1.25^            # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
+alpha_min_endstop                            1.25^!           # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
 #alpha_max_endstop                           1.25^            # Pin to read max endstop, uncomment this and comment the above if using max endstops
 alpha_homing_direction                       home_to_min      # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 alpha_min                                    0                # This gets loaded as the current position after homing when home_to_min is set
 alpha_max                                    200              # This gets loaded as the current position after homing when home_to_max is set
-beta_min_endstop                             1.26^            # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
+beta_min_endstop                             1.26^!           # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
 #beta_max_endstop                            1.27^            # Pin to read max endstop, uncomment this and comment the above if using max endstops
 beta_homing_direction                        home_to_min      # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 beta_min                                     0                # This gets loaded as the current position after homing when home_to_min is set
 beta_max                                     200              # This gets loaded as the current position after homing when home_to_max is set
 #gamma_min_endstop                           3.26^            # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
-gamma_max_endstop                            1.27^            # Pin to read max endstop, uncomment this and comment the above if using max endstops
+gamma_max_endstop                            1.27^!           # Pin to read max endstop, uncomment this and comment the above if using max endstops
 gamma_homing_direction                       home_to_max      # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 gamma_min                                    0                # This gets loaded as the current position after homing when home_to_min is set
-gamma_max                                    200              # This gets loaded as the current position after homing when home_to_max is set
+gamma_max                                    180              # This gets loaded as the current position after homing when home_to_max is set
 
-alpha_max_travel                             500              # Max travel in mm for alpha/X axis when homing
-beta_max_travel                              500              # Max travel in mm for beta/Y axis when homing
-gamma_max_travel                             500              # Max travel in mm for gamma/Z axis when homing
+alpha_max_travel                             250              # Max travel in mm for alpha/X axis when homing
+beta_max_travel                              250              # Max travel in mm for beta/Y axis when homing
+gamma_max_travel                             250              # Max travel in mm for gamma/Z axis when homing
 
 # Optional enable limit switches, actions will stop if any enabled limit switch is triggered
-#alpha_limit_enable                          false            # Set to true to enable X min and max limit switches
-#beta_limit_enable                           false            # Set to true to enable Y min and max limit switches
+alpha_limit_enable                           true             # Set to true to enable X min and max limit switches
+beta_limit_enable                            true             # Set to true to enable Y min and max limit switches
 #gamma_limit_enable                          false            # Set to true to enable Z min and max limit switches
 
 # Endstops home at their fast feedrate first, then once the endstop is found they home again at their slow feedrate for accuracy
