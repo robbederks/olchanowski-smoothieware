@@ -405,7 +405,6 @@ int SSD1322::readEncoderDelta()
     static int8_t enc_states[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
     static uint8_t old_AB = 0;
     if(this->encoder_a_pin.connected()) {
-        // mviki
         old_AB <<= 2;                   //remember previous state
         old_AB |= ( this->encoder_a_pin.get() + ( this->encoder_b_pin.get() * 2 ) );  //add current state
         return  enc_states[(old_AB & 0x0f)];
@@ -445,10 +444,11 @@ void SSD1322::renderGlyph(int x, int y, const uint8_t *g, int w, int h)
     CLAMP(w, 0, this->width - x);
     CLAMP(h, 0, this->height - y);
 
+    int graphics_byte_index = 0;
     for(int i = 0; i < w; i++) {
         for(int j = 0; j < h; j++) {
-            // TODO: fix
-            pixel(x + i, y + j, g[(i / 8) + j * ((w - 1) / 8 + 1)] & (1 << (7 - i % 8)));
+            graphics_byte_index = (i/8) + (j * (w/8));
+            pixel(x + i, y + j, g[graphics_byte_index] & (1 << (i%8)) ? text_color : text_background );
         }
     }
 }

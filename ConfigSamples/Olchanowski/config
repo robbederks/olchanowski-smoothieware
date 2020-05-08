@@ -322,10 +322,10 @@ panel.spi_channel                            0                 # set spi channel
 panel.spi_cs_pin                             0.16              # set spi chip select
 panel.rst_pin                                1.30              # reset pin
 panel.a0_pin                                 1.28              # pin a0 (data/command)
-panel.encoder_a_pin                          1.21!^            # encoder pin
-panel.encoder_b_pin                          1.22!^            # encoder pin
+panel.encoder_a_pin                          1.21              # encoder pin
+panel.encoder_b_pin                          1.22              # encoder pin
 panel.click_button_pin                       4.29!^            # click button
-#panel.encoder_resolution                    4                 # override number of clicks to move 1 item (default is 4)
+panel.encoder_resolution                     2                 # override number of clicks to move 1 item (default is 4)
 panel.buzz_pin                               4.28!             # pin for buzzer on EXP2
 panel.buzz_type_simple                       true              # do we just pull the pin high?
 panel.external_sd                            true              # set to true if there is an extrernal sdcard on the panel
