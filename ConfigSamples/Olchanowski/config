@@ -386,3 +386,9 @@ kill_button_pin                              2.12             # Kill button pin.
 # Only needed on a smoothieboard
 # See http://smoothieware.org/currentcontrol
 currentcontrol_module_enable                 false            # Control stepper motor current via the configuration file
+
+# Status RGB
+status_rgb.enable                            true
+status_rgb.led_r_pin                         1.18
+status_rgb.led_g_pin                         1.19
+status_rgb.led_b_pin                         1.20
