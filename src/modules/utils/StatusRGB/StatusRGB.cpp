@@ -45,6 +45,7 @@ uint32_t StatusRGB::tick(uint32_t) {
         // Conveyor is not idle -> has queued up moves
         this->set_color(false, false, true);
     } else {
+        // Everything is idle
         this->set_color(false, true, false);
     }
 
