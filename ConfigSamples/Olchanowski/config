@@ -23,7 +23,7 @@ junction_deviation                           0.05             # See http://smoot
 # Cartesian axis speed limits
 x_axis_max_speed                             30000            # Maximum speed in mm/min
 y_axis_max_speed                             30000            # Maximum speed in mm/min
-z_axis_max_speed                             300              # Maximum speed in mm/min
+z_axis_max_speed                             1000              # Maximum speed in mm/min
 
 # Stepper module configuration
 # Pins are defined as  ports, and pin numbers, appending "!" to the number will invert a pin
@@ -264,9 +264,9 @@ beta_limit_enable                            true             # Set to true to e
 
 # Endstops home at their fast feedrate first, then once the endstop is found they home again at their slow feedrate for accuracy
 alpha_fast_homing_rate_mm_s                  50               # Alpha/X fast homing feedrate in mm/second
-alpha_slow_homing_rate_mm_s                  25               # Alpha/X slow homing feedrate in mm/second
+alpha_slow_homing_rate_mm_s                  5                # Alpha/X slow homing feedrate in mm/second
 beta_fast_homing_rate_mm_s                   50               # Beta/Y  fast homing feedrate in mm/second
-beta_slow_homing_rate_mm_s                   25               # Beta/Y  slow homing feedrate in mm/second
+beta_slow_homing_rate_mm_s                   5                # Beta/Y  slow homing feedrate in mm/second
 gamma_fast_homing_rate_mm_s                  4                # Gamma/Z fast homing feedrate in mm/second
 gamma_slow_homing_rate_mm_s                  2                # Gamma/Z slow homing feedrate in mm/second
 
