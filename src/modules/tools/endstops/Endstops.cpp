@@ -678,7 +678,7 @@ void Endstops::home(axis_bitmap_t a)
         bool found = false;
         for(auto& e : homing_axis) {
             if(e.pin_info->axis == 'Z' && e.home_direction == true){
-                if(!e.pin_info->pin.connected()){
+                if(e.pin_info->pin.connected()){
                     found = true;
                 }
             }
@@ -713,6 +713,7 @@ void Endstops::home(axis_bitmap_t a)
             delta[Y_AXIS] = this->zortrax_y_center - THEROBOT->get_axis_position(Y_AXIS);
             delta[Z_AXIS] = 0;
             THEROBOT->delta_move(delta, homing_axis[X_AXIS].fast_rate, 3);
+            THECONVEYOR->wait_for_idle();
         }
 
         // now home z

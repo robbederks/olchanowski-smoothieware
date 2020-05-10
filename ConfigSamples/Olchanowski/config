@@ -180,9 +180,9 @@ beta_max_endstop                                          nc                # Pi
 beta_homing_direction                                     home_to_min       # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 beta_min                                                  0                 # This gets loaded as the current position after homing when home_to_min is set
 beta_max                                                  200               # This gets loaded as the current position after homing when home_to_max is set
-gamma_min_endstop                                         3.26              # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
-gamma_max_endstop                                         1.27^!            # Pin to read max endstop, uncomment this and comment the above if using max endstops
-gamma_homing_direction                                    home_to_max       # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
+gamma_min_endstop                                         3.25              # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
+gamma_max_endstop                                         nc                # Pin to read max endstop, uncomment this and comment the above if using max endstops
+gamma_homing_direction                                    home_to_min       # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 gamma_min                                                 0                 # This gets loaded as the current position after homing when home_to_min is set
 gamma_max                                                 180               # This gets loaded as the current position after homing when home_to_max is set
 
@@ -211,7 +211,7 @@ zortrax_homing.enabled                                    true              # Ho
 zortrax_homing.x_center_mm                                100               # X coordinate for the center position used for Z probing
 zortrax_homing.y_center_mm                                100               # Y coordinate for the center position used for Z probing
 zortrax_homing.random_deviation_mm                        15                # Add a random amount to center coordinates to avoid repetitive bed wear
-zortrax_homing.senser_loopback_pin                        3.25              # Senser loopback connection pin
+zortrax_homing.senser_loopback_pin                        3.26              # Senser loopback connection pin
 
 move_to_origin_after_home                                 false             # Move XY to 0,0 after homing
 endstop_debounce_count                                    100               # Uncomment if you get noise on your endstops, default is 100
@@ -219,7 +219,7 @@ endstop_debounce_ms                                       1                 # Un
 
 # Z-probe & Levelling strategy
 zprobe.enable                                             true              # Set to true to enable a zprobe
-zprobe.probe_pin                                          3.26!^            # Pin probe is attached to, if NC remove the !
+zprobe.probe_pin                                          3.25!^            # Pin probe is attached to, if NC remove the !
 zprobe.slow_feedrate                                      5                 # Mm/sec probe feed rate
 zprobe.debounce_ms                                        1                 # Set if noisy
 zprobe.fast_feedrate                                      100               # Move feedrate mm/sec
