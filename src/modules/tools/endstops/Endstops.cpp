@@ -53,10 +53,18 @@
 enum DEFNS {MIN_PIN, MAX_PIN, MAX_TRAVEL, FAST_RATE, SLOW_RATE, RETRACT, DIRECTION, MIN, MAX, LIMIT, NDEFNS};
 
 // global config settings
+#define enabled_checksum                 CHECKSUM("enabled")
+
 #define corexy_homing_checksum           CHECKSUM("corexy_homing")
 #define delta_homing_checksum            CHECKSUM("delta_homing")
 #define rdelta_homing_checksum           CHECKSUM("rdelta_homing")
 #define scara_homing_checksum            CHECKSUM("scara_homing")
+
+#define zortrax_homing_checksum          CHECKSUM("zortrax_homing")
+#define x_center_checksum                CHECKSUM("x_center_mm")
+#define y_center_checksum                CHECKSUM("y_center_mm")
+#define random_deviation_checksum        CHECKSUM("random_deviation_mm")
+#define senser_loopback_pin_checksum     CHECKSUM("senser_loopback_pin")
 
 #define endstop_debounce_count_checksum  CHECKSUM("endstop_debounce_count")
 #define endstop_debounce_ms_checksum     CHECKSUM("endstop_debounce_ms")
@@ -117,8 +125,7 @@ void Endstops::on_module_loaded()
             delete this;
             return;
         }
-
-    }else{
+    } else {
         // check for new config syntax
         if(!load_config()) {
             delete this;
@@ -386,16 +393,25 @@ void Endstops::get_global_configs()
     this->debounce_ms= THEKERNEL->config->value(endstop_debounce_ms_checksum)->by_default(0)->as_number();
     this->debounce_count= THEKERNEL->config->value(endstop_debounce_count_checksum)->by_default(100)->as_number();
 
-    this->is_corexy= THEKERNEL->config->value(corexy_homing_checksum)->by_default(false)->as_bool();
-    this->is_delta=  THEKERNEL->config->value(delta_homing_checksum)->by_default(false)->as_bool();
-    this->is_rdelta= THEKERNEL->config->value(rdelta_homing_checksum)->by_default(false)->as_bool();
-    this->is_scara=  THEKERNEL->config->value(scara_homing_checksum)->by_default(false)->as_bool();
+    this->is_corexy=   THEKERNEL->config->value(corexy_homing_checksum)->by_default(false)->as_bool();
+    this->is_delta=    THEKERNEL->config->value(delta_homing_checksum)->by_default(false)->as_bool();
+    this->is_rdelta=   THEKERNEL->config->value(rdelta_homing_checksum)->by_default(false)->as_bool();
+    this->is_scara=    THEKERNEL->config->value(scara_homing_checksum)->by_default(false)->as_bool();
+    this->is_zortrax=  THEKERNEL->config->value(zortrax_homing_checksum, enabled_checksum)->by_default(false)->as_bool();
 
     this->home_z_first= THEKERNEL->config->value(home_z_first_checksum)->by_default(false)->as_bool();
 
     this->trim_mm[0] = THEKERNEL->config->value(alpha_trim_checksum)->by_default(0)->as_number();
     this->trim_mm[1] = THEKERNEL->config->value(beta_trim_checksum)->by_default(0)->as_number();
     this->trim_mm[2] = THEKERNEL->config->value(gamma_trim_checksum)->by_default(0)->as_number();
+
+    // if zortrax homing, get all the other required parameters
+    if(this->is_zortrax){
+        this->zortrax_x_center = THEKERNEL->config->value(zortrax_homing_checksum, x_center_checksum)->by_default(100)->as_number();
+        this->zortrax_y_center = THEKERNEL->config->value(zortrax_homing_checksum, y_center_checksum)->by_default(100)->as_number();
+        this->zortrax_random_deviation = THEKERNEL->config->value(zortrax_homing_checksum, random_deviation_checksum)->by_default(15)->as_number();
+        this->zortrax_senser_loopback_pin.from_string(THEKERNEL->config->value(zortrax_homing_checksum, senser_loopback_pin_checksum)->by_default("nc")->as_string())->as_input()->pull_up();
+    }
 
     // see if an order has been specified, must be three or more characters, XYZABC or ABYXZ etc
     string order = THEKERNEL->config->value(homing_order_checksum)->by_default("")->as_string();
@@ -649,6 +665,32 @@ void Endstops::home(axis_bitmap_t a)
         THEROBOT->disable_arm_solution = true;  // Polar bots has to home in the actuator space.  Arm solution disabled.
     }
 
+    // if on zortrax, check that the senser is connected and configured
+    if(this->is_zortrax){
+        if(!this->zortrax_senser_loopback_pin.connected() || this->zortrax_senser_loopback_pin.get()){
+            this->status = NOT_HOMING;
+            THEKERNEL->streams->printf("ERROR: Senser not connected. Reset or $X or M999 required\n");
+            THEKERNEL->call_event(ON_HALT, nullptr);
+            return;
+        }
+
+        // Find Z_MIN and make sure it's connected
+        bool found = false;
+        for(auto& e : homing_axis) {
+            if(e.pin_info->axis == 'Z' && e.home_direction == true){
+                if(!e.pin_info->pin.connected()){
+                    found = true;
+                }
+            }
+        }
+        if(!found){
+            this->status = NOT_HOMING;
+            THEKERNEL->streams->printf("ERROR: Probe not connected. Reset or $X or M999 required\n");
+            THEKERNEL->call_event(ON_HALT, nullptr);
+            return;
+        }
+    }
+
     this->axis_to_home= a;
 
     // Start moving the axes to the origin
@@ -656,9 +698,23 @@ void Endstops::home(axis_bitmap_t a)
 
     THEROBOT->disable_segmentation= true; // we must disable segmentation as this won't work with it enabled
 
-    if(!home_z_first) home_xy();
+    if(!home_z_first || this->is_zortrax) home_xy();
 
     if(axis_to_home[Z_AXIS]) {
+        if(this->is_zortrax){
+            // Move up a bit
+            float delta[3] {0, 0, 5};
+            THEROBOT->delta_move(delta, homing_axis[Z_AXIS].fast_rate, 3);
+            THECONVEYOR->wait_for_idle();
+
+            // Move to the center position of the bed
+            // TODO: Imlement random deviation
+            delta[X_AXIS] = this->zortrax_x_center - THEROBOT->get_axis_position(X_AXIS);
+            delta[Y_AXIS] = this->zortrax_y_center - THEROBOT->get_axis_position(Y_AXIS);
+            delta[Z_AXIS] = 0;
+            THEROBOT->delta_move(delta, homing_axis[X_AXIS].fast_rate, 3);
+        }
+
         // now home z
         float delta[3] {0, 0, homing_axis[Z_AXIS].max_travel}; // we go the max z
         if(homing_axis[Z_AXIS].home_direction) delta[Z_AXIS]= -delta[Z_AXIS];
@@ -667,7 +723,7 @@ void Endstops::home(axis_bitmap_t a)
         THECONVEYOR->wait_for_idle();
     }
 
-    if(home_z_first) home_xy();
+    if(home_z_first && !this->is_zortrax) home_xy();
 
     // potentially home A B and C individually
     if(homing_axis.size() > 3){

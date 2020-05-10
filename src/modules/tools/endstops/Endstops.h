@@ -85,6 +85,8 @@ class Endstops : public Module{
         // axis that can be homed, 0,1,2 always there and optionally 3 is A, 4 is B, 5 is C
         std::vector<homing_info_t> homing_axis;
 
+        Pin zortrax_senser_loopback_pin;
+
         // Global state
         struct {
             uint32_t homing_order:18;
@@ -92,9 +94,14 @@ class Endstops : public Module{
             bool is_corexy:1;
             bool is_delta:1;
             bool is_rdelta:1;
-            bool is_scara:1;
+            bool is_scara:1;            
             bool home_z_first:1;
             bool move_to_origin_after_home:1;
             bool park_after_home:1;
+
+            bool is_zortrax:1;
+            uint16_t zortrax_x_center:16;
+            uint16_t zortrax_y_center:16;
+            uint16_t zortrax_random_deviation:16;
         };
 };
