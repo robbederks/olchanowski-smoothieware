@@ -180,7 +180,7 @@ beta_max_endstop                                          nc                # Pi
 beta_homing_direction                                     home_to_min       # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 beta_min                                                  0                 # This gets loaded as the current position after homing when home_to_min is set
 beta_max                                                  200               # This gets loaded as the current position after homing when home_to_max is set
-gamma_min_endstop                                         3.25              # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
+gamma_min_endstop                                         3.25!             # Pin to read min endstop, add a ! to invert if endstop is NO connected to ground
 gamma_max_endstop                                         nc                # Pin to read max endstop, uncomment this and comment the above if using max endstops
 gamma_homing_direction                                    home_to_min       # Or set to home_to_max and set alpha_max and uncomment the alpha_max_endstop
 gamma_min                                                 0                 # This gets loaded as the current position after homing when home_to_min is set
@@ -205,12 +205,7 @@ alpha_homing_retract_mm                                   5                 # Di
 beta_homing_retract_mm                                    5                 # Distance to retract from the endstop after it is hit for beta/Y
 gamma_homing_retract_mm                                   1                 # Distance to retract from the endstop after it is hit for gamma/Z
 
-homing_order                                              XYZ               # Optional order in which axis will home, default is they all home at the same time. If set, they home sequentially
-
 zortrax_homing.enabled                                    true              # Home XY, and then home Z using the probe at the specified location
-zortrax_homing.x_center_mm                                100               # X coordinate for the center position used for Z probing
-zortrax_homing.y_center_mm                                100               # Y coordinate for the center position used for Z probing
-zortrax_homing.random_deviation_mm                        15                # Add a random amount to center coordinates to avoid repetitive bed wear
 zortrax_homing.senser_loopback_pin                        3.26              # Senser loopback connection pin
 
 move_to_origin_after_home                                 false             # Move XY to 0,0 after homing

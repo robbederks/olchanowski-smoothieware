@@ -407,9 +407,6 @@ void Endstops::get_global_configs()
 
     // if zortrax homing, get all the other required parameters
     if(this->is_zortrax){
-        this->zortrax_x_center = THEKERNEL->config->value(zortrax_homing_checksum, x_center_checksum)->by_default(100)->as_number();
-        this->zortrax_y_center = THEKERNEL->config->value(zortrax_homing_checksum, y_center_checksum)->by_default(100)->as_number();
-        this->zortrax_random_deviation = THEKERNEL->config->value(zortrax_homing_checksum, random_deviation_checksum)->by_default(15)->as_number();
         this->zortrax_senser_loopback_pin.from_string(THEKERNEL->config->value(zortrax_homing_checksum, senser_loopback_pin_checksum)->by_default("nc")->as_string())->as_input()->pull_up();
     }
 
@@ -701,21 +698,6 @@ void Endstops::home(axis_bitmap_t a)
     if(!home_z_first || this->is_zortrax) home_xy();
 
     if(axis_to_home[Z_AXIS]) {
-        if(this->is_zortrax){
-            // Move up a bit
-            float delta[3] {0, 0, 5};
-            THEROBOT->delta_move(delta, homing_axis[Z_AXIS].fast_rate, 3);
-            THECONVEYOR->wait_for_idle();
-
-            // Move to the center position of the bed
-            // TODO: Imlement random deviation
-            delta[X_AXIS] = this->zortrax_x_center - THEROBOT->get_axis_position(X_AXIS);
-            delta[Y_AXIS] = this->zortrax_y_center - THEROBOT->get_axis_position(Y_AXIS);
-            delta[Z_AXIS] = 0;
-            THEROBOT->delta_move(delta, homing_axis[X_AXIS].fast_rate, 3);
-            THECONVEYOR->wait_for_idle();
-        }
-
         // now home z
         float delta[3] {0, 0, homing_axis[Z_AXIS].max_travel}; // we go the max z
         if(homing_axis[Z_AXIS].home_direction) delta[Z_AXIS]= -delta[Z_AXIS];

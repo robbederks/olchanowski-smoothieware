@@ -100,8 +100,5 @@ class Endstops : public Module{
             bool park_after_home:1;
 
             bool is_zortrax:1;
-            uint16_t zortrax_x_center:16;
-            uint16_t zortrax_y_center:16;
-            uint16_t zortrax_random_deviation:16;
         };
 };
